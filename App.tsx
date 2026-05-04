@@ -16,7 +16,7 @@ const App: React.FC = () => {
 
   const verifyCode = async () => {
     if (!accessCode) return;
-    if (accessCode === 'admin2026') {
+    if (accessCode === 'ADMIN2026') {
       setState(AppState.ADMIN);
       return;
     }
@@ -85,7 +85,7 @@ const App: React.FC = () => {
       const response = await fetch('/api/generate-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'admin2026' })
+        body: JSON.stringify({ password: 'ADMIN2026' })
       });
       const data = await response.json();
       if (response.ok) {
