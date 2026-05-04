@@ -11,7 +11,7 @@ export async function analyzeFinancialDocuments(files: FileData[]): Promise<Audi
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Errore del server: ${response.status}`);
+    throw new Error(errorData.details || errorData.error || `Errore del server: ${response.status}`);
   }
 
   const data = await response.json();

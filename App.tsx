@@ -42,7 +42,8 @@ const App: React.FC = () => {
       setState(AppState.REPORT_READY);
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      setError("Si è verificato un errore durante l'analisi dei documenti. Assicurati che i PDF siano leggibili e riprova.");
+      const errorMsg = err.message || "Si è verificato un errore sconosciuto.";
+      setError(`Errore durante l'analisi: ${errorMsg}`);
       setState(AppState.ERROR);
     }
   };
