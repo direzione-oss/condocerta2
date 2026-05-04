@@ -28,15 +28,7 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const filesData: FileData[] = await Promise.all(
-        selectedFiles.map(async (file) => ({
-          base64: await fileToBase64(file),
-          mimeType: file.type,
-          name: file.name
-        }))
-      );
-      
-      const result = await analyzeFinancialDocuments(filesData);
+      const result = await analyzeFinancialDocuments(selectedFiles);
       
       setReport(result);
       setState(AppState.REPORT_READY);
@@ -46,18 +38,6 @@ const App: React.FC = () => {
       setError(`Errore durante l'analisi: ${errorMsg}`);
       setState(AppState.ERROR);
     }
-  };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64String = reader.result as string;
-        resolve(base64String.split(',')[1]);
-      };
-      reader.onerror = error => reject(error);
-    });
   };
 
   const reset = () => {

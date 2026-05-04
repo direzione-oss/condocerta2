@@ -64,20 +64,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { files } = req.body;
+    const { fileUrls } = req.body;
 
-    if (!files || !Array.isArray(files)) {
-      return res.status(400).json({ error: "File mancanti o formato non valido" });
+    if (!fileUrls || !Array.isArray(fileUrls)) {
+      return res.status(400).json({ error: "URL file mancanti o formato non valido" });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const model = "gemini-3-pro-preview";
 
-    const contentParts = [
+    // Scarica i file da Vercel Blob
+    const downloadedFiles = await Promise.all(
+      fileUrls.map(async (fileObj: { url: string; mimeType: string }) => {
+        const fileResponse = await fetch(fileObj.url);
+        if (!fileResponse.ok) {
+          throw new Error(`Impossibile scaricare il file da ${fileObj.url}`);
+        }
+        const arrayBuffer = await fileResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        return {
+          inlineData: { data: base64, mimeType: fileObj.mimeType }
+        };
+      })
+    );
+
+    const contentParts: any[] = [
       { text: ANALYSIS_PROMPT },
-      ...files.map(f => ({
-        inlineData: { data: f.base64, mimeType: f.mimeType }
-      }))
+      ...downloadedFiles
     ];
 
     const response = await ai.models.generateContent({
