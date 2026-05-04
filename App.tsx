@@ -78,23 +78,27 @@ const App: React.FC = () => {
     setError(null);
   };
 
-  const [newGeneratedCode, setNewGeneratedCode] = useState<string | null>(null);
+  const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateNewCode = async () => {
+  const generateNewCode = async (count: number = 1) => {
+    setIsGenerating(true);
     try {
       const response = await fetch('/api/generate-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'ADMIN2026' })
+        body: JSON.stringify({ password: 'ADMIN2026', count })
       });
       const data = await response.json();
       if (response.ok) {
-        setNewGeneratedCode(data.code);
+        setGeneratedCodes(data.codes || [data.code]); // Fallback se il backend è in cache
       } else {
         alert(data.error);
       }
     } catch (e) {
       alert("Errore generazione");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -141,19 +145,46 @@ const App: React.FC = () => {
              <h2 className="text-2xl font-bold text-emerald-800 mb-6">Pannello Amministrazione</h2>
              <p className="text-slate-600 mb-6">Da qui puoi generare i codici usa e getta da inviare ai tuoi clienti. Ogni codice è valido per una singola analisi.</p>
              
-             <button onClick={generateNewCode} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold mb-8 shadow-sm">
-               Genera Nuovo Codice
-             </button>
+             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+               <button 
+                 onClick={() => generateNewCode(1)} 
+                 disabled={isGenerating}
+                 className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition"
+               >
+                 Genera 1 Codice
+               </button>
+               <button 
+                 onClick={() => generateNewCode(10)} 
+                 disabled={isGenerating}
+                 className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition"
+               >
+                 Genera Pacchetto da 10
+               </button>
+             </div>
 
-             {newGeneratedCode && (
-               <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl mb-8">
-                 <p className="text-sm text-emerald-800 mb-2">Codice Generato Pronto all'Uso:</p>
-                 <p className="text-4xl font-extrabold text-emerald-900 tracking-widest">{newGeneratedCode}</p>
+             {generatedCodes.length > 0 && (
+               <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl mb-8 text-left max-h-64 overflow-y-auto">
+                 <p className="text-sm font-bold text-emerald-800 mb-4 border-b border-emerald-200 pb-2">
+                   {generatedCodes.length === 1 ? 'Codice Generato:' : `${generatedCodes.length} Codici Generati:`}
+                 </p>
+                 <div className="space-y-2">
+                   {generatedCodes.map((code, i) => (
+                     <div key={i} className="flex justify-between items-center bg-white p-3 rounded border border-emerald-100">
+                       <span className="text-xl font-extrabold text-slate-800 tracking-widest">{code}</span>
+                       <button 
+                         onClick={() => navigator.clipboard.writeText(code)}
+                         className="text-xs text-emerald-600 hover:text-emerald-800 uppercase font-bold"
+                       >
+                         Copia
+                       </button>
+                     </div>
+                   ))}
+                 </div>
                </div>
              )}
 
              <div className="border-t border-slate-100 pt-6">
-               <button onClick={() => { setState(AppState.LOCKED); setAccessCode(''); setNewGeneratedCode(null); }} className="text-slate-500 underline text-sm hover:text-slate-800">Torna al Lucchetto</button>
+               <button onClick={() => { setState(AppState.LOCKED); setAccessCode(''); setGeneratedCodes([]); }} className="text-slate-500 underline text-sm hover:text-slate-800">Torna al Lucchetto</button>
              </div>
           </div>
         </div>

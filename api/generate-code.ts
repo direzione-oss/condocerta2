@@ -31,24 +31,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { password } = req.body;
+    const { password, count = 1 } = req.body;
 
     // Semplice protezione admin
     if (password !== 'ADMIN2026') {
       return res.status(401).json({ error: 'Password errata' });
     }
 
-    const newCode = generateRandomCode();
+    const numCodes = Math.min(Math.max(1, count), 50); // Limita tra 1 e 50
+    const newCodes = [];
+    const insertPayload = [];
+
+    for (let i = 0; i < numCodes; i++) {
+      const code = generateRandomCode();
+      newCodes.push(code);
+      insertPayload.push({ code });
+    }
 
     const { error } = await supabase
       .from('condocerta_codes')
-      .insert([{ code: newCode }]);
+      .insert(insertPayload);
 
     if (error) {
       throw error;
     }
 
-    return res.status(200).json({ code: newCode });
+    return res.status(200).json({ codes: newCodes });
   } catch (error: any) {
     console.error("Errore generazione codice:", error);
     return res.status(500).json({ error: "Errore interno del server." });
