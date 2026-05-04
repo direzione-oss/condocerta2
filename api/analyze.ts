@@ -40,6 +40,13 @@ Dovrai restituire un JSON strutturato con queste sezioni:
 
 Istruzioni di stile: Linguaggio da revisore contabile, tono autorevole, citazioni legali precise, orientamento alla trasparenza e alla riduzione del contenzioso.
 `;
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4.5mb',
+    },
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Configurazione CORS
