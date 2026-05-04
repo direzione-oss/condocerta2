@@ -7,10 +7,41 @@ import { analyzeFinancialDocuments } from './services/geminiService';
 import { AuditReport, AppState, FileData } from './types';
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>(AppState.IDLE);
+  const [state, setState] = useState<AppState>(AppState.LOCKED);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState<string>('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const verifyCode = async () => {
+    if (!accessCode) return;
+    if (accessCode === 'admin2026') {
+      setState(AppState.ADMIN);
+      return;
+    }
+
+    setIsVerifying(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: accessCode })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Errore durante la verifica');
+      }
+      
+      setState(AppState.IDLE);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleFilesSelect = (files: File[]) => {
     setSelectedFiles(prev => [...prev, ...files]);
@@ -28,7 +59,7 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const result = await analyzeFinancialDocuments(selectedFiles);
+      const result = await analyzeFinancialDocuments(selectedFiles, accessCode);
       
       setReport(result);
       setState(AppState.REPORT_READY);
@@ -47,8 +78,87 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const [newGeneratedCode, setNewGeneratedCode] = useState<string | null>(null);
+
+  const generateNewCode = async () => {
+    try {
+      const response = await fetch('/api/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: 'admin2026' })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setNewGeneratedCode(data.code);
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Errore generazione");
+    }
+  };
+
   return (
     <Layout>
+      {state === AppState.LOCKED && (
+        <div className="flex flex-col items-center justify-center py-24 px-4">
+          <div className="bg-white rounded-3xl p-10 max-w-md w-full shadow-lg border border-slate-100 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i className="fas fa-lock text-3xl"></i>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Accesso Protetto</h2>
+            <p className="text-slate-500 mb-8 text-sm">Inserisci il codice monouso per sbloccare l'analisi del rendiconto.</p>
+            
+            <input 
+              type="text" 
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              placeholder="Inserisci il codice..."
+              className="w-full text-center text-2xl font-bold tracking-widest p-4 rounded-xl border border-slate-200 bg-slate-50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all mb-4 uppercase"
+              onKeyDown={(e) => e.key === 'Enter' && verifyCode()}
+            />
+            
+            {error && (
+              <div className="text-rose-500 text-sm mb-4 font-medium p-3 bg-rose-50 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <button 
+              onClick={verifyCode}
+              disabled={!accessCode || isVerifying}
+              className="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-slate-800 transition disabled:opacity-50"
+            >
+              {isVerifying ? 'Verifica in corso...' : 'Sblocca'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state === AppState.ADMIN && (
+        <div className="flex flex-col items-center justify-center py-12 px-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-10 max-w-lg w-full shadow-lg border border-emerald-100 text-center">
+             <h2 className="text-2xl font-bold text-emerald-800 mb-6">Pannello Amministrazione</h2>
+             <p className="text-slate-600 mb-6">Da qui puoi generare i codici usa e getta da inviare ai tuoi clienti. Ogni codice è valido per una singola analisi.</p>
+             
+             <button onClick={generateNewCode} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold mb-8 shadow-sm">
+               Genera Nuovo Codice
+             </button>
+
+             {newGeneratedCode && (
+               <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl mb-8">
+                 <p className="text-sm text-emerald-800 mb-2">Codice Generato Pronto all'Uso:</p>
+                 <p className="text-4xl font-extrabold text-emerald-900 tracking-widest">{newGeneratedCode}</p>
+               </div>
+             )}
+
+             <div className="border-t border-slate-100 pt-6">
+               <button onClick={() => { setState(AppState.LOCKED); setAccessCode(''); setNewGeneratedCode(null); }} className="text-slate-500 underline text-sm hover:text-slate-800">Torna al Lucchetto</button>
+             </div>
+          </div>
+        </div>
+      )}
+
       {state === AppState.IDLE && (
         <div className="space-y-12 py-8 animate-in fade-in duration-500">
           {/* Valore Professionale Section */}

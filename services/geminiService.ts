@@ -1,7 +1,7 @@
 import { AuditReport } from "../types";
 import { upload } from '@vercel/blob/client';
 
-export async function analyzeFinancialDocuments(files: File[]): Promise<AuditReport> {
+export async function analyzeFinancialDocuments(files: File[], accessCode: string): Promise<AuditReport> {
   // 1. Carica i file su Vercel Blob
   const fileUrls = await Promise.all(
     files.map(async (file) => {
@@ -23,7 +23,7 @@ export async function analyzeFinancialDocuments(files: File[]): Promise<AuditRep
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ fileUrls }),
+    body: JSON.stringify({ fileUrls, accessCode }),
   });
 
   if (!response.ok) {

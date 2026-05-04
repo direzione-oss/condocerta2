@@ -64,10 +64,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { fileUrls } = req.body;
+    const { fileUrls, accessCode } = req.body;
 
     if (!fileUrls || !Array.isArray(fileUrls)) {
       return res.status(400).json({ error: "URL file mancanti o formato non valido" });
+    }
+
+    if (!accessCode) {
+      return res.status(401).json({ error: "Codice di accesso mancante. Ricarica la pagina e reinserisci il codice." });
+    }
+
+    // Initialize Supabase
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_KEY || '');
+
+    // Verifica il codice
+    const { data: codeData, error: codeError } = await supabase
+      .from('condocerta_codes')
+      .select('*')
+      .eq('code', accessCode.trim())
+      .single();
+
+    if (codeError || !codeData || codeData.is_used) {
+      return res.status(401).json({ error: "Codice inesistente, non valido o già utilizzato." });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -163,6 +182,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const text = response.text || "{}";
     const data = JSON.parse(text);
+
+    // Se l'analisi ha successo, brucia il codice
+    await supabase
+      .from('condocerta_codes')
+      .update({ is_used: true, used_at: new Date().toISOString() })
+      .eq('id', codeData.id);
 
     return res.status(200).json(data);
   } catch (error: any) {

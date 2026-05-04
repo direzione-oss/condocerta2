@@ -46,6 +46,8 @@ export interface AuditReport {
 }
 
 export enum AppState {
+  LOCKED = 'locked',
+  ADMIN = 'admin',
   IDLE = 'idle',
   UPLOADING = 'uploading',
   ANALYZING = 'analyzing',
