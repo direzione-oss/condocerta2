@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { password } = req.body;
 
     // Semplice protezione admin
-    if (password !== 'admin2026') {
+    if (password !== 'ADMIN2026') {
       return res.status(401).json({ error: 'Password errata' });
     }
 
