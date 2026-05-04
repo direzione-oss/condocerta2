@@ -104,8 +104,32 @@ const App: React.FC = () => {
 
   return (
     <Layout>
+      {/* Valore Professionale Section visibile su LOCKED e IDLE */}
+      {(state === AppState.LOCKED || state === AppState.IDLE) && (
+        <div className="max-w-4xl mx-auto bg-emerald-50 border border-emerald-100 rounded-3xl p-8 md:p-12 shadow-sm mt-8 mb-4 animate-in fade-in duration-500">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
+              <i className="fas fa-certificate text-emerald-500 text-3xl"></i>
+            </div>
+            <div className="text-left">
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Perché questa App è preziosa?</h2>
+              <p className="text-slate-700 leading-relaxed mb-4">
+                Come specificato nella Premessa della <strong>Guida ANACI (Pag. 2)</strong>, l'Associazione mira a differenziare il 
+                <span className="text-emerald-700 font-semibold italic"> "professionista" </span> dall'improvvisato.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                Questa app non si limita a controllare i conti, ma certifica che il rendiconto sia uno strumento di 
+                <span className="text-emerald-700 font-bold"> "valenza etica e professionale"</span>, 
+                fornendo all'amministratore un supporto concreto per ridurre drasticamente il contenzioso giudiziario e 
+                garantire la massima trasparenza ai condomini.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {state === AppState.LOCKED && (
-        <div className="flex flex-col items-center justify-center py-24 px-4">
+        <div className="flex flex-col items-center justify-center py-12 px-4">
           <div className="bg-white rounded-3xl p-10 max-w-md w-full shadow-lg border border-slate-100 text-center animate-in fade-in zoom-in duration-300">
             <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6">
               <i className="fas fa-lock text-3xl"></i>
@@ -191,28 +215,7 @@ const App: React.FC = () => {
       )}
 
       {state === AppState.IDLE && (
-        <div className="space-y-12 py-8 animate-in fade-in duration-500">
-          {/* Valore Professionale Section */}
-          <div className="max-w-4xl mx-auto bg-emerald-50 border border-emerald-100 rounded-3xl p-8 md:p-12 shadow-sm">
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0">
-                <i className="fas fa-certificate text-emerald-500 text-3xl"></i>
-              </div>
-              <div className="text-left">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">Perché questa App è preziosa?</h2>
-                <p className="text-slate-700 leading-relaxed mb-4">
-                  Come specificato nella Premessa della <strong>Guida ANACI (Pag. 2)</strong>, l'Associazione mira a differenziare il 
-                  <span className="text-emerald-700 font-semibold italic"> "professionista" </span> dall'improvvisato.
-                </p>
-                <p className="text-slate-700 leading-relaxed">
-                  Questa app non si limita a controllare i conti, ma certifica che il rendiconto sia uno strumento di 
-                  <span className="text-emerald-700 font-bold"> "valenza etica e professionale"</span>, 
-                  fornendo all'amministratore un supporto concreto per ridurre drasticamente il contenzioso giudiziario e 
-                  garantire la massima trasparenza ai condomini.
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="space-y-12 py-4 animate-in fade-in duration-500">
 
           <div className="text-center">
             <div className="max-w-3xl mx-auto px-4">
