@@ -537,13 +537,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({ token, onClose, onUpdate
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                <div className="sm:col-span-4">
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                     Intestatario Conto / Studio
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={paymentConfig.bankBeneficiary}
                     onChange={(e) =>
                       setPaymentConfig({ ...paymentConfig, bankBeneficiary: e.target.value })
@@ -551,17 +552,30 @@ export const AdminModal: React.FC<AdminModalProps> = ({ token, onClose, onUpdate
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm"
                   />
                 </div>
-                <div>
+                <div className="sm:col-span-5">
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    IBAN per Bonifico Bancario
+                    Coordinate Bonifico (Codice Conto)
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
+                    name="bank_coord_custom"
                     placeholder="IT00 X000 0000 0000 0000 0000 000"
                     value={paymentConfig.iban}
                     onChange={(e) => setPaymentConfig({ ...paymentConfig, iban: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono"
                   />
+                </div>
+                <div className="sm:col-span-3 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-2.5">
+                  <img
+                    src="/paypal-qr.png"
+                    alt="PayPal QR"
+                    className="w-14 h-14 object-contain rounded-lg bg-white p-1 border border-blue-100 flex-shrink-0"
+                  />
+                  <div className="text-[11px] leading-tight text-blue-900">
+                    <strong className="block">QR PayPal Attivo</strong>
+                    <span className="text-blue-700">Mostrato accanto all'IBAN</span>
+                  </div>
                 </div>
               </div>
 

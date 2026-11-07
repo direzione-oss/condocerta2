@@ -55,7 +55,7 @@ export const ActivationScreen: React.FC<ActivationScreenProps> = ({
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto py-8 animate-in fade-in duration-500">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
         {/* Top Banner */}
         <div className="bg-slate-900 text-white p-8 text-center">
@@ -85,76 +85,107 @@ export const ActivationScreen: React.FC<ActivationScreenProps> = ({
             </div>
           )}
 
-          {/* Direct Payment & Bank Transfer Options */}
+          {/* Direct Payment (PayPal QR) & Bank Transfer (IBAN) Side-by-Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Option 1: Online Payment Link (Stripe / PayPal) */}
+            {/* Option 1: PayPal QR Code & Online Payment */}
             <div className="border border-slate-200 rounded-2xl p-6 flex flex-col justify-between bg-slate-50/60">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
-                  <i className="fas fa-credit-card text-lg"></i>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <i className="fab fa-paypal text-xl"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">
+                      1. Pagamento Rapido PayPal
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Inquadra il QR Code con il telefono o l'app PayPal
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1">
-                  1. Pagamento Rapido Online
-                </h4>
-                <p className="text-xs text-slate-500 mb-5">
-                  Paga con Carta di Credito, PayPal o Stripe per velocizzare l'attivazione dei tuoi
-                  crediti di revisione.
-                </p>
+
+                <div className="my-4 flex flex-col items-center justify-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                  <img
+                    src="/paypal-qr.png"
+                    alt="QR Code PayPal Studio Serra"
+                    className="w-44 h-44 object-contain"
+                  />
+                  <span className="text-[11px] font-bold text-blue-700 mt-2">
+                    Scansiona per pagare con PayPal
+                  </span>
+                </div>
               </div>
 
-              {paymentConfig.paymentUrl ? (
+              {paymentConfig.paymentUrl && (
                 <a
                   href={paymentConfig.paymentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 text-center"
+                  className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 text-center mt-2"
                 >
                   <i className="fas fa-external-link-alt"></i>
-                  <span>Procedi al Pagamento Online</span>
-                </a>
-              ) : (
-                <a
-                  href={`mailto:${paymentConfig.contactEmail || 'direzione@serrastudio.it'}?subject=${encodeURIComponent(
-                    `Richiesta link pagamento CondoCerta - ${user.name} (${user.email})`
-                  )}`}
-                  className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 text-center"
-                >
-                  <i className="fas fa-envelope"></i>
-                  <span>Richiedi Link Pagamento Rapido</span>
+                  <span>Apri Link Pagamento Online</span>
                 </a>
               )}
             </div>
 
-            {/* Option 2: Bank Transfer / Direct Contact */}
+            {/* Option 2: Bank Transfer (IBAN) & Direct Contact */}
             <div className="border border-slate-200 rounded-2xl p-6 flex flex-col justify-between bg-slate-50/60">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                  <i className="fas fa-university text-lg"></i>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <i className="fas fa-university text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">
+                      2. Bonifico Bancario / Studio Serra
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Coordinate bancarie per bonifico ordinario o istantaneo
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1">
-                  2. Bonifico Bancario / Studio Serra
-                </h4>
-                <div className="text-xs text-slate-600 space-y-1.5 mb-4">
+
+                <div className="text-xs text-slate-600 space-y-3 mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                   <p>
-                    <strong>Intestatario:</strong> {paymentConfig.bankBeneficiary || 'Studio Serra'}
+                    <strong>Intestatario:</strong>{' '}
+                    <span className="text-slate-900 font-semibold">
+                      {paymentConfig.bankBeneficiary || 'Studio Serra'}
+                    </span>
                   </p>
-                  {paymentConfig.iban && (
-                    <div className="p-2.5 bg-white rounded-lg border border-slate-200 flex items-center justify-between gap-2">
-                      <span className="font-mono font-bold text-slate-800 text-[11px] break-all">
-                        {paymentConfig.iban}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={copyIban}
-                        className="text-emerald-600 hover:text-emerald-700 font-bold text-[11px] flex-shrink-0"
-                      >
-                        {copied ? 'Copiato!' : 'Copia'}
-                      </button>
+                  {paymentConfig.iban ? (
+                    <div>
+                      <span className="block font-bold text-slate-700 mb-1">IBAN:</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                        <span className="font-mono font-bold text-slate-900 text-xs break-all">
+                          {paymentConfig.iban}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={copyIban}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold text-[11px] flex-shrink-0 transition"
+                        >
+                          {copied ? 'Copiato!' : 'Copia'}
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    <p className="text-slate-400 italic">
+                      Richiedi le coordinate IBAN allo Studio cliccando qui sotto.
+                    </p>
                   )}
                   <p>
-                    <strong>Causale:</strong> Attivazione CondoCerta - {user.email}
+                    <strong>Causale:</strong>{' '}
+                    <span className="text-slate-800">Attivazione CondoCerta - {user.email}</span>
                   </p>
+                  {paymentConfig.contactPhone && (
+                    <p>
+                      <strong>Telefono / WhatsApp:</strong>{' '}
+                      <span className="text-slate-900 font-semibold">
+                        {paymentConfig.contactPhone}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -162,12 +193,12 @@ export const ActivationScreen: React.FC<ActivationScreenProps> = ({
                 href={`mailto:${paymentConfig.contactEmail || 'direzione@serrastudio.it'}?subject=${encodeURIComponent(
                   `Conferma Pagamento CondoCerta - ${user.name}`
                 )}&body=${encodeURIComponent(
-                  `Buongiorno Studio Serra,\n\nho registrato l'account ${user.email} (${user.company || user.name}) su CondoCerta e richiedo l'attivazione dei crediti.\n\nCordiali saluti,\n${user.name}\nTel: ${user.phone}`
+                  `Buongiorno Studio Serra,\n\nho registrato l'account ${user.email} (${user.company || user.name}) su CondoCerta ed effettuato il pagamento. Richiedo l'attivazione dei crediti.\n\nCordiali saluti,\n${user.name}\nTel: ${user.phone}`
                 )}`}
                 className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 text-center"
               >
                 <i className="fas fa-paper-plane"></i>
-                <span>Invia Contabile / Contatta Studio</span>
+                <span>Invia Conferma Pagamento allo Studio</span>
               </a>
             </div>
           </div>
