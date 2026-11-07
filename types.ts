@@ -1,4 +1,3 @@
-
 export interface AnalysisSection {
   title: string;
   items: string[];
@@ -51,4 +50,38 @@ export enum AppState {
   ANALYZING = 'analyzing',
   REPORT_READY = 'report_ready',
   ERROR = 'error'
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'active' | 'suspended';
+  credits: number; // -1 = unlimited
+  expiresAt: string | null;
+  analysesCount: number;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface PaymentConfig {
+  paymentUrl: string;
+  iban: string;
+  bankBeneficiary: string;
+  contactEmail: string;
+  contactPhone: string;
+  plansText: string;
+  welcomeMessage: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  userEmail: string;
+  condoName: string;
+  overallScore: number;
+  createdAt: string;
 }
