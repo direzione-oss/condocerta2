@@ -12,6 +12,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
       const body =
         mode === 'login'
           ? { email, password }
-          : { name, company, email, phone, password };
+          : { name, company, email, phone, password, promoCode };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -34,7 +35,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Errore durante l\'autenticazione.');
+        throw new Error(data.error || "Errore durante l'autenticazione.");
       }
       onAuthenticated(data.token, data.user, data.paymentConfig);
     } catch (err: any) {
@@ -73,12 +74,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
                 Condominio.
               </li>
               <li>
-                <strong>Scegli il tuo piano o pacchetto revisioni</strong> e completa il pagamento
-                (Online o tramite Bonifico).
+                <strong>Hai un Codice Promo?</strong> Inseriscilo per sbloccare subito la tua prova
+                gratuita, oppure scegli il tuo pacchetto revisioni (PayPal o Bonifico).
               </li>
               <li>
-                <strong>Ricevi l'abilitazione immediata</strong> da Studio Serra e avvia le tue
-                revisioni certificate in PDF.
+                <strong>Avvia subito le tue revisioni certificate</strong> e scarica il report
+                tecnico in PDF.
               </li>
             </ol>
           </div>
@@ -125,7 +126,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
             <p className="text-xs text-slate-500 mb-6">
               {mode === 'login'
                 ? 'Inserisci le tue credenziali per accedere alla dashboard di revisione.'
-                : 'Compila il modulo per creare il tuo account e procedere all\'attivazione.'}
+                : "Compila il modulo per creare il tuo account e procedere all'attivazione."}
             </p>
 
             {error && (
@@ -209,6 +210,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
                 />
               </div>
 
+              {mode === 'register' && (
+                <div className="pt-1">
+                  <label className="block text-xs font-bold text-amber-700 uppercase mb-1 flex items-center gap-1.5">
+                    <i className="fas fa-gift text-amber-500"></i>
+                    <span>Codice Promo / Prova Gratuita (Opzionale)</span>
+                  </label>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Se hai un codice invito inseriscilo qui"
+                    className="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50/50 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -227,7 +245,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
                 ) : (
                   <>
                     <i className="fas fa-user-plus"></i>
-                    <span>Crea Account e Richiedi Accesso</span>
+                    <span>{promoCode ? 'Attiva con Codice Promo' : 'Crea Account e Continua'}</span>
                   </>
                 )}
               </button>

@@ -237,6 +237,7 @@ const App: React.FC = () => {
         <AuthScreen onAuthenticated={handleAuthenticated} />
       ) : !isUserAllowedToAnalyze(user) && state !== AppState.REPORT_READY ? (
         <ActivationScreen
+          token={token || ''}
           user={user}
           paymentConfig={paymentConfig}
           onRefreshStatus={() => refreshProfile(token)}

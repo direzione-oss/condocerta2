@@ -2,18 +2,23 @@ import React, { useState } from 'react';
 import { AuthUser, PaymentConfig } from '../types';
 
 interface ActivationScreenProps {
+  token: string;
   user: AuthUser;
   paymentConfig: PaymentConfig;
   onRefreshStatus: () => Promise<void>;
 }
 
 export const ActivationScreen: React.FC<ActivationScreenProps> = ({
+  token,
   user,
   paymentConfig,
   onRefreshStatus,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   const isExpired =
     user.expiresAt && new Date(user.expiresAt + 'T23:59:59') < new Date();
@@ -47,6 +52,32 @@ export const ActivationScreen: React.FC<ActivationScreenProps> = ({
     }
   };
 
+  const handleRedeemPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch('/api/auth/redeem-promo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ promoCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Codice promo non valido.');
+      }
+      await onRefreshStatus();
+    } catch (err: any) {
+      setPromoError(err?.message || 'Errore verifica codice promo.');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
   const copyIban = () => {
     if (!paymentConfig.iban) return;
     navigator.clipboard.writeText(paymentConfig.iban);
@@ -72,6 +103,48 @@ export const ActivationScreen: React.FC<ActivationScreenProps> = ({
         </div>
 
         <div className="p-8 space-y-8">
+          {/* Promo Code Box */}
+          {paymentConfig.promoEnabled !== false && user.status !== 'suspended' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-2">
+                    <i className="fas fa-gift text-amber-600 text-base"></i>
+                    <span>Hai un Codice Promo o Invito Gratuito?</span>
+                  </h3>
+                  <p className="text-xs text-amber-800 mt-1">
+                    Inserisci il codice fornito da Studio Serra per sbloccare subito il tuo account
+                    senza pagamento.
+                  </p>
+                </div>
+
+                <form onSubmit={handleRedeemPromo} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="CODICE PROMO"
+                    className="px-4 py-2.5 rounded-xl border border-amber-300 bg-white text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-amber-500 w-44"
+                  />
+                  <button
+                    type="submit"
+                    disabled={promoLoading || !promoCode.trim()}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-extrabold text-xs rounded-xl shadow-sm transition whitespace-nowrap"
+                  >
+                    {promoLoading ? 'Verifica...' : 'Attiva Ora'}
+                  </button>
+                </form>
+              </div>
+              {promoError && (
+                <div className="mt-3 text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                  <i className="fas fa-exclamation-circle"></i>
+                  <span>{promoError}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Pricing / Plans Box */}
           {paymentConfig.plansText && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">

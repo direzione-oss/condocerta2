@@ -21,6 +21,7 @@ export interface UserRecord {
   analysesCount: number;
   createdAt: string;
   notes?: string;
+  redeemedPromos?: string[];
 }
 
 export interface PaymentConfig {
@@ -31,6 +32,9 @@ export interface PaymentConfig {
   contactPhone: string;
   plansText: string;
   welcomeMessage: string;
+  promoEnabled: boolean;
+  promoCode: string;
+  promoCredits: number;
 }
 
 export interface AuditLogEntry {
@@ -78,6 +82,7 @@ function loadDb(): DatabaseSchema {
           analysesCount: 0,
           createdAt: new Date().toISOString(),
           notes: "Account Amministratore Principale",
+          redeemedPromos: [],
         },
       ],
       sessions: {},
@@ -91,6 +96,9 @@ function loadDb(): DatabaseSchema {
           "• Singola Revisione Certificata: 49 €\n• Pacchetto 5 Revisioni: 190 €\n• Abbonamento Annuale Studio (Revisioni Illimitate): 490 €/anno",
         welcomeMessage:
           "Il tuo account è stato registrato con successo. Per abilitare l'accesso a CondoCerta e caricare i tuoi crediti di revisione, completa il pagamento ed attendi l'attivazione da parte di Studio Serra.",
+        promoEnabled: true,
+        promoCode: "PROVA-SERRA",
+        promoCredits: 1,
       },
       auditLogs: [],
     };
@@ -101,6 +109,15 @@ function loadDb(): DatabaseSchema {
     const raw = fs.readFileSync(DB_FILE, "utf-8");
     const parsed = JSON.parse(raw) as DatabaseSchema;
     if (!parsed.auditLogs) parsed.auditLogs = [];
+    if (parsed.paymentConfig.promoEnabled === undefined) {
+      parsed.paymentConfig.promoEnabled = true;
+    }
+    if (!parsed.paymentConfig.promoCode) {
+      parsed.paymentConfig.promoCode = "PROVA-SERRA";
+    }
+    if (!parsed.paymentConfig.promoCredits) {
+      parsed.paymentConfig.promoCredits = 1;
+    }
     return parsed;
   } catch (err) {
     console.error("Errore lettura DB, ripristino default:", err);
@@ -118,6 +135,11 @@ function saveDb(db: DatabaseSchema) {
 function sanitizeUser(u: UserRecord) {
   const { passwordHash, ...safe } = u;
   return safe;
+}
+
+function sanitizePaymentConfigForClient(cfg: PaymentConfig) {
+  const { promoCode, ...publicCfg } = cfg;
+  return publicCfg;
 }
 
 function getAuthenticatedUser(req: express.Request, db: DatabaseSchema): UserRecord | null {
@@ -161,7 +183,7 @@ async function startServer() {
 
   // ─── AUTH ENDPOINTS ──────────────────────────────────────────────────────────
   app.post("/api/auth/register", (req, res) => {
-    const { name, company, email, phone, password } = req.body || {};
+    const { name, company, email, phone, password, promoCode } = req.body || {};
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Nome, Email e Password sono obbligatori." });
     }
@@ -169,6 +191,22 @@ async function startServer() {
     const db = loadDb();
     if (db.users.some((u) => u.email.toLowerCase() === cleanEmail)) {
       return res.status(400).json({ error: "Questa email è già registrata. Effettua il login." });
+    }
+
+    let initialStatus: "pending" | "active" = "pending";
+    let initialCredits = 0;
+    const redeemedPromos: string[] = [];
+
+    const inputPromo = String(promoCode || "").trim().toUpperCase();
+    const validPromo = String(db.paymentConfig.promoCode || "").trim().toUpperCase();
+
+    if (inputPromo) {
+      if (!db.paymentConfig.promoEnabled || !validPromo || inputPromo !== validPromo) {
+        return res.status(400).json({ error: "Il Codice Promo inserito non è valido o è scaduto." });
+      }
+      initialStatus = "active";
+      initialCredits = Number(db.paymentConfig.promoCredits || 1);
+      redeemedPromos.push(validPromo);
     }
 
     const newUser: UserRecord = {
@@ -179,11 +217,13 @@ async function startServer() {
       phone: String(phone || "").trim(),
       passwordHash: hashPassword(String(password)),
       role: "user",
-      status: "pending",
-      credits: 0,
+      status: initialStatus,
+      credits: initialCredits,
       expiresAt: null,
       analysesCount: 0,
       createdAt: new Date().toISOString(),
+      redeemedPromos,
+      notes: inputPromo ? `Attivato con codice promo: ${validPromo}` : undefined,
     };
 
     db.users.push(newUser);
@@ -194,7 +234,44 @@ async function startServer() {
     res.json({
       token,
       user: sanitizeUser(newUser),
-      paymentConfig: db.paymentConfig,
+      paymentConfig: sanitizePaymentConfigForClient(db.paymentConfig),
+    });
+  });
+
+  app.post("/api/auth/redeem-promo", (req, res) => {
+    const db = loadDb();
+    const user = getAuthenticatedUser(req, db);
+    if (!user) {
+      return res.status(401).json({ error: "Devi effettuare l'accesso." });
+    }
+    const inputPromo = String(req.body?.promoCode || "").trim().toUpperCase();
+    const validPromo = String(db.paymentConfig.promoCode || "").trim().toUpperCase();
+
+    if (!inputPromo || !db.paymentConfig.promoEnabled || !validPromo || inputPromo !== validPromo) {
+      return res.status(400).json({ error: "Codice Promo non valido o non più attivo." });
+    }
+
+    if (!user.redeemedPromos) user.redeemedPromos = [];
+    if (user.redeemedPromos.includes(validPromo)) {
+      return res.status(400).json({ error: "Hai già utilizzato questo Codice Promo sul tuo account." });
+    }
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ error: "Il tuo account è sospeso. Contatta Studio Serra." });
+    }
+
+    const bonusCredits = Number(db.paymentConfig.promoCredits || 1);
+    user.status = "active";
+    if (user.credits !== -1) {
+      user.credits = Math.max(0, user.credits) + bonusCredits;
+    }
+    user.redeemedPromos.push(validPromo);
+    user.notes = (user.notes ? user.notes + " | " : "") + `Promo riscattato: ${validPromo} (+${bonusCredits})`;
+
+    saveDb(db);
+    res.json({
+      user: sanitizeUser(user),
+      message: `Codice Promo attivato! Hai ricevuto ${bonusCredits} revision${bonusCredits === 1 ? "e" : "i"} gratuit${bonusCredits === 1 ? "a" : "e"}.`,
     });
   });
 
@@ -217,7 +294,7 @@ async function startServer() {
     res.json({
       token,
       user: sanitizeUser(user),
-      paymentConfig: db.paymentConfig,
+      paymentConfig: sanitizePaymentConfigForClient(db.paymentConfig),
     });
   });
 
@@ -229,7 +306,7 @@ async function startServer() {
     }
     res.json({
       user: sanitizeUser(user),
-      paymentConfig: db.paymentConfig,
+      paymentConfig: sanitizePaymentConfigForClient(db.paymentConfig),
     });
   });
 
@@ -357,6 +434,7 @@ async function startServer() {
       expiresAt: expiresAt || null,
       analysesCount: 0,
       createdAt: new Date().toISOString(),
+      redeemedPromos: [],
     };
     db.users.push(newUser);
     saveDb(db);
@@ -388,6 +466,9 @@ async function startServer() {
     db.paymentConfig = {
       ...db.paymentConfig,
       ...req.body,
+      promoCode: String(req.body?.promoCode || "PROVA-SERRA").trim().toUpperCase(),
+      promoCredits: Math.max(1, Number(req.body?.promoCredits || 1)),
+      promoEnabled: Boolean(req.body?.promoEnabled),
     };
     saveDb(db);
     res.json({ paymentConfig: db.paymentConfig });

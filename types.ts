@@ -65,6 +65,7 @@ export interface AuthUser {
   analysesCount: number;
   createdAt: string;
   notes?: string;
+  redeemedPromos?: string[];
 }
 
 export interface PaymentConfig {
@@ -75,6 +76,9 @@ export interface PaymentConfig {
   contactPhone: string;
   plansText: string;
   welcomeMessage: string;
+  promoEnabled?: boolean;
+  promoCode?: string;
+  promoCredits?: number;
 }
 
 export interface AuditLogEntry {

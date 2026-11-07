@@ -19,6 +19,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ token, onClose, onUpdate
     contactPhone: '',
     plansText: '',
     welcomeMessage: '',
+    promoEnabled: true,
+    promoCode: 'PROVA-SERRA',
+    promoCredits: 1,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -518,6 +521,72 @@ export const AdminModal: React.FC<AdminModalProps> = ({ token, onClose, onUpdate
             </>
           ) : tab === 'payments' ? (
             <form onSubmit={savePaymentSettings} className="space-y-4 max-w-3xl">
+              {/* Promo Code Configuration Box */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <i className="fas fa-gift text-amber-600 text-lg"></i>
+                    <h4 className="text-sm font-extrabold text-amber-950 uppercase tracking-wide">
+                      Codice Promo per Prova Gratuita (Senza Pagamento)
+                    </h4>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-900">
+                    <input
+                      type="checkbox"
+                      checked={paymentConfig.promoEnabled !== false}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, promoEnabled: e.target.checked })
+                      }
+                      className="w-4 h-4 accent-amber-600 rounded"
+                    />
+                    <span>Codice Promo Attivo</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-amber-900 uppercase mb-1">
+                      Codice Promo Segreto (da dare agli invitati)
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      value={paymentConfig.promoCode || 'PROVA-SERRA'}
+                      onChange={(e) =>
+                        setPaymentConfig({
+                          ...paymentConfig,
+                          promoCode: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="Es. PROVA-SERRA"
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-white text-sm font-mono font-extrabold uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-amber-900 uppercase mb-1">
+                      Revisioni Gratuite Sbloccate dal Codice
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={paymentConfig.promoCredits || 1}
+                      onChange={(e) =>
+                        setPaymentConfig({
+                          ...paymentConfig,
+                          promoCredits: Math.max(1, Number(e.target.value)),
+                        })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-white text-sm font-bold"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-amber-800">
+                  Chi inserisce questo codice (in fase di registrazione o nella pagina di
+                  attivazione) entra subito senza pagare con il numero di revisioni gratuite
+                  indicato qui sopra.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Link Pagamento Diretto Online (Stripe / PayPal / SumUp)
